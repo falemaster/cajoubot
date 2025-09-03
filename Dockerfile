@@ -1,18 +1,15 @@
-# Dockerfile multi-stage pour le bot Telegram Comptables
-# Stage 1: Build dependencies
-FROM python:3.11-slim as builder
+# Dockerfile simplifié pour Railway - Bot Telegram Comptables
+FROM python:3.11-slim
 
 # Variables d'environnement pour Python
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PIP_NO_CACHE_DIR=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Installe les dépendances système nécessaires pour la compilation
+# Installe les dépendances système
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Crée un utilisateur non-root
 RUN useradd --create-home --shell /bin/bash app
@@ -22,33 +19,10 @@ WORKDIR /app
 
 # Copie et installe les dépendances Python
 COPY requirements.txt .
-RUN pip install --user --no-warn-script-location -r requirements.txt
-
-# Stage 2: Runtime
-FROM python:3.11-slim as runtime
-
-# Variables d'environnement pour Python
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PATH="/home/app/.local/bin:$PATH"
-
-# Installe les dépendances runtime minimales
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Crée un utilisateur non-root
-RUN useradd --create-home --shell /bin/bash app
-
-# Copie les dépendances Python depuis le stage builder
-COPY --from=builder /home/app/.local /home/app/.local
-
-# Définit le répertoire de travail
-WORKDIR /app
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copie le code de l'application
-COPY --chown=app:app . .
+COPY . .
 
 # Change vers l'utilisateur non-root
 USER app

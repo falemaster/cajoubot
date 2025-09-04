@@ -1,8 +1,6 @@
 """
 Module d'intégration avec Notion pour le bot Telegram Comptables.
-
-Gère les opérations CRUD sur la base de données Notion des comptables,
-la déduplication et la vérification du schéma.
+Adapté à la structure existante de la base de données.
 """
 
 import logging
@@ -18,20 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 class NotionComptablesClient:
-    """Client pour interagir avec la base de données Notion des comptables."""
+    """Client pour interagir avec la base de données Notion des comptables - Structure adaptée."""
     
-    # Schéma attendu de la base de données
+    # Schéma adapté à la structure existante
     EXPECTED_SCHEMA = {
-        "Nom": {"type": "title"},
-        "Contact": {"type": "rich_text"},
-        "Email": {"type": "email"},
-        "Téléphone": {"type": "phone_number"},
-        "Ville": {"type": "rich_text"},
-        "Source": {"type": "select", "options": ["Client", "Prospect", "LinkedIn", "Appel", "Autre"]},
-        "Ajouté par": {"type": "rich_text"},
-        "Statut": {"type": "select", "options": ["À qualifier", "Cordial", "Ciblé", "Autre"]},
-        "Notes": {"type": "rich_text"},
-        "Date d'ajout": {"type": "date"}
+        "Nom": {"type": "rich_text"},                    # Nom (Rich Text)
+        "Prénom": {"type": "rich_text"},                 # Prénom (Rich Text)  
+        "Société": {"type": "rich_text"},                # Société (Rich Text)
+        "Phone": {"type": "phone_number"},               # Phone (Phone Number)
+        "Localisation": {"type": "rich_text"},           # Localisation (Rich Text)
+        "Customer Email": {"type": "email"},             # Customer Email (Email)
+        "Date": {"type": "date"},                        # Date (Date)
+        "Étape de la qualification": {"type": "select"}  # Étape de la qualification (Select)
     }
     
     def __init__(self, notion_token: str, database_id: str):
@@ -104,6 +100,7 @@ class NotionComptablesClient:
     def _build_page_properties(self, comptable_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Construit les propriétés d'une page Notion à partir des données du comptable.
+        Adapté à la structure existante.
         
         Args:
             comptable_data: Données du comptable
@@ -113,57 +110,46 @@ class NotionComptablesClient:
         """
         properties = {}
         
-        # Nom (Title) - obligatoire
+        # Nom (Rich Text) - obligatoire
         if "nom" in comptable_data and comptable_data["nom"]:
             properties["Nom"] = {
-                "title": [{"text": {"content": sanitize_text_field(comptable_data["nom"], NOTION_TITLE_MAX_LENGTH) or "Sans nom"}}]
+                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["nom"], NOTION_TEXT_MAX_LENGTH) or "Sans nom"}}]
             }
         
-        # Contact (Rich text)
-        if "contact" in comptable_data and comptable_data["contact"]:
-            properties["Contact"] = {
-                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["contact"], NOTION_TEXT_MAX_LENGTH)}}]
+        # Prénom (Rich Text)
+        if "prenom" in comptable_data and comptable_data["prenom"]:
+            properties["Prénom"] = {
+                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["prenom"], NOTION_TEXT_MAX_LENGTH)}}]
             }
         
-        # Email
-        if "email" in comptable_data and comptable_data["email"]:
-            properties["Email"] = {"email": comptable_data["email"]}
+        # Société (Rich Text)
+        if "societe" in comptable_data and comptable_data["societe"]:
+            properties["Société"] = {
+                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["societe"], NOTION_TEXT_MAX_LENGTH)}}]
+            }
         
-        # Téléphone
+        # Phone (Phone Number)
         if "telephone" in comptable_data and comptable_data["telephone"]:
-            properties["Téléphone"] = {"phone_number": comptable_data["telephone"]}
+            properties["Phone"] = {"phone_number": comptable_data["telephone"]}
         
-        # Ville (Rich text)
+        # Localisation (Rich Text)
         if "ville" in comptable_data and comptable_data["ville"]:
-            properties["Ville"] = {
+            properties["Localisation"] = {
                 "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["ville"], NOTION_TEXT_MAX_LENGTH)}}]
             }
         
-        # Source (Select)
-        source = comptable_data.get("source", "Autre")
-        if source in self.EXPECTED_SCHEMA["Source"]["options"]:
-            properties["Source"] = {"select": {"name": source}}
+        # Customer Email (Email)
+        if "email" in comptable_data and comptable_data["email"]:
+            properties["Customer Email"] = {"email": comptable_data["email"]}
         
-        # Ajouté par (Rich text)
-        if "ajoute_par" in comptable_data and comptable_data["ajoute_par"]:
-            properties["Ajouté par"] = {
-                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["ajoute_par"], NOTION_TEXT_MAX_LENGTH)}}]
-            }
+        # Date (Date) - automatique
+        properties["Date"] = {
+            "date": {"start": datetime.now().isoformat()[:10]}
+        }
         
-        # Statut (Select) - par défaut "À qualifier"
-        statut = comptable_data.get("statut", "À qualifier")
-        if statut in self.EXPECTED_SCHEMA["Statut"]["options"]:
-            properties["Statut"] = {"select": {"name": statut}}
-        
-        # Notes (Rich text)
-        if "notes" in comptable_data and comptable_data["notes"]:
-            properties["Notes"] = {
-                "rich_text": [{"text": {"content": sanitize_text_field(comptable_data["notes"], NOTION_TEXT_MAX_LENGTH)}}]
-            }
-        
-        # Date d'ajout (Date) - automatique
-        properties["Date d'ajout"] = {
-            "date": {"start": datetime.now().isoformat()}
+        # Étape de la qualification (Select) - par défaut "Nouveau"
+        properties["Étape de la qualification"] = {
+            "select": {"name": "Nouveau"}
         }
         
         return properties
@@ -173,6 +159,7 @@ class NotionComptablesClient:
                                      ville: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Recherche des comptables existants selon les critères de déduplication.
+        Adapté à la structure existante.
         
         Args:
             email: Email à rechercher
@@ -188,7 +175,7 @@ class NotionComptablesClient:
             # Filtre par email si fourni
             if email:
                 filters.append({
-                    "property": "Email",
+                    "property": "Customer Email",
                     "email": {"equals": email}
                 })
             
@@ -197,10 +184,10 @@ class NotionComptablesClient:
                 filters.extend([
                     {
                         "property": "Nom",
-                        "title": {"equals": nom}
+                        "rich_text": {"equals": nom}
                     },
                     {
-                        "property": "Ville",
+                        "property": "Localisation",
                         "rich_text": {"equals": ville}
                     }
                 ])
@@ -333,6 +320,7 @@ class NotionComptablesClient:
     async def search_comptables(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
         Recherche des comptables par texte libre.
+        Adapté à la structure existante.
         
         Args:
             query: Terme de recherche
@@ -347,19 +335,23 @@ class NotionComptablesClient:
                 "or": [
                     {
                         "property": "Nom",
-                        "title": {"contains": query}
-                    },
-                    {
-                        "property": "Ville",
                         "rich_text": {"contains": query}
                     },
                     {
-                        "property": "Email",
+                        "property": "Prénom",
+                        "rich_text": {"contains": query}
+                    },
+                    {
+                        "property": "Société",
+                        "rich_text": {"contains": query}
+                    },
+                    {
+                        "property": "Localisation",
+                        "rich_text": {"contains": query}
+                    },
+                    {
+                        "property": "Customer Email",
                         "email": {"contains": query}
-                    },
-                    {
-                        "property": "Contact",
-                        "rich_text": {"contains": query}
                     }
                 ]
             }
@@ -374,10 +366,15 @@ class NotionComptablesClient:
             
             results = []
             for page in response.get("results", []):
-                # Extrait le titre et l'URL
-                title_prop = page.get("properties", {}).get("Nom", {})
-                title_content = title_prop.get("title", [])
-                title = title_content[0].get("text", {}).get("content", "Sans nom") if title_content else "Sans nom"
+                # Extrait le nom et prénom pour le titre
+                properties = page.get("properties", {})
+                nom_prop = properties.get("Nom", {}).get("rich_text", [])
+                prenom_prop = properties.get("Prénom", {}).get("rich_text", [])
+                
+                nom = nom_prop[0].get("text", {}).get("content", "") if nom_prop else ""
+                prenom = prenom_prop[0].get("text", {}).get("content", "") if prenom_prop else ""
+                
+                title = f"{prenom} {nom}".strip() or "Sans nom"
                 
                 results.append({
                     "id": page["id"],
@@ -395,6 +392,7 @@ class NotionComptablesClient:
     def extract_page_title(self, page: Dict[str, Any]) -> str:
         """
         Extrait le titre d'une page Notion.
+        Adapté à la structure existante (Nom + Prénom).
         
         Args:
             page: Page Notion
@@ -402,9 +400,13 @@ class NotionComptablesClient:
         Returns:
             Titre de la page
         """
-        title_prop = page.get("properties", {}).get("Nom", {})
-        title_content = title_prop.get("title", [])
-        if title_content:
-            return title_content[0].get("text", {}).get("content", "Sans nom")
-        return "Sans nom"
+        properties = page.get("properties", {})
+        nom_prop = properties.get("Nom", {}).get("rich_text", [])
+        prenom_prop = properties.get("Prénom", {}).get("rich_text", [])
+        
+        nom = nom_prop[0].get("text", {}).get("content", "") if nom_prop else ""
+        prenom = prenom_prop[0].get("text", {}).get("content", "") if prenom_prop else ""
+        
+        title = f"{prenom} {nom}".strip() or "Sans nom"
+        return title
 

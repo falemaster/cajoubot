@@ -48,7 +48,7 @@ class NotionClientV2:
             
             # Type (Select)
             if data.get("type"):
-                properties["Type"] = {
+                properties["Type d'apporteur"] = {
                     "select": {"name": data["type"]}
                 }
             
@@ -94,18 +94,18 @@ class NotionClientV2:
             
             # Nom de l'affaire/Source
             if data.get("affaire_source"):
-                properties["Nom de l'affaire/Source"] = {
+                properties["Nom de l'affaire/Client Source"] = {
                     "rich_text": [{"text": {"content": data["affaire_source"]}}]
                 }
             
             # Commentaire
             if data.get("commentaire"):
-                properties["Commentaire"] = {
+                properties["A propos de ce contact"] = {
                     "rich_text": [{"text": {"content": data["commentaire"]}}]
                 }
             
             # Auteur
-            properties["Auteur"] = {
+            properties["Auteur de l'ajout"] = {
                 "rich_text": [{"text": {"content": author}}]
             }
             

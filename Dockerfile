@@ -34,8 +34,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/healthz || exit 1
 
-# Commande par défaut (mode webhook)
-CMD ["python", "app.py"]
+# Commande par défaut (bot simplifié)
+CMD ["python", "app_simple.py"]
 
 # Labels pour la métadonnée
 LABEL maintainer="Nadav"
